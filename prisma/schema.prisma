@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  OFFICER
+}
+
+enum RequestType {
+  OD
+  LEAVE
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Student {
+  id           Int       @id @default(autoincrement())
+  registration String    @unique
+  name         String
+  department   String
+  year         Int
+  section      String
+  password     String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  requests     Request[]
+
+  @@index([registration])
+}
+
+model Staff {
+  id        Int      @id @default(autoincrement())
+  staffId   String   @unique
+  name      String
+  password  String
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([staffId])
+}
+
+model Request {
+  id            Int           @id @default(autoincrement())
+  studentId     Int
+  type          RequestType
+  justification String
+  fromDate      DateTime
+  toDate        DateTime
+  status        RequestStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+
