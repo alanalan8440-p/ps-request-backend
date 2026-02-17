@@ -61,15 +61,19 @@ exports.loginStudent = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: student.id },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
-        );
+    {
+        id: student.id,
+        role: "STUDENT"   // 👈 add role here
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1d" }
+);
 
-        res.json({
-            message: "Login successful",
-            token
-        });
+res.json({
+    message: "Login successful",
+    token
+});
+
 
     } catch (error) {
         console.error(error);
