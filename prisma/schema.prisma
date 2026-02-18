@@ -24,30 +24,26 @@ enum RequestStatus {
 }
 
 model Student {
-  id           Int       @id @default(autoincrement())
-  registration String    @unique
-  name         String
-  department   String
-  year         Int
-  section      String
+  id           Int     @id @default(autoincrement())
+  registration String  @unique
   password     String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  firstLogin   Boolean @default(true)
+  name         String?
+  department   String?
+  year         String?
+  section      String?
 
-  requests     Request[]
-
-  @@index([registration])
+  requests Request[] // 👈 ADD THIS BACK
 }
 
 model Staff {
-  id        Int      @id @default(autoincrement())
-  staffId   String   @unique
+  id        Int       @id @default(autoincrement())
+  staffId   String    @unique
   name      String
   password  String
   role      UserRole
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@index([staffId])
@@ -65,11 +61,9 @@ model Request {
   updatedAt     DateTime      @updatedAt
   deletedAt     DateTime?
 
-  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
   @@index([status])
   @@index([createdAt])
 }
-
-
