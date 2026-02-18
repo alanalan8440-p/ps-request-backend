@@ -17,9 +17,7 @@ exports.loginStudent = async (req, res) => {
       where: { registration }
     });
 
-    /* --------------------------------------------------------
-       FIRST LOGIN (AUTO CREATE)
-    --------------------------------------------------------- */
+    // FIRST LOGIN (AUTO CREATE)
     if (!student && password === "DEV@123") {
       student = await prisma.student.create({
         data: {
@@ -33,8 +31,7 @@ exports.loginStudent = async (req, res) => {
       });
 
       return res.json({
-        firstLogin: true,
-        registration
+        firstLogin: true
       });
     }
 
@@ -42,21 +39,16 @@ exports.loginStudent = async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    /* --------------------------------------------------------
-       PASSWORD NOT SET YET
-    --------------------------------------------------------- */
+    // Password not set yet
     if (!student.password || student.password === "") {
       if (password === "DEV@123") {
         return res.json({
-          firstLogin: true,
-          registration
+          firstLogin: true
         });
       }
     }
 
-    /* --------------------------------------------------------
-       NORMAL LOGIN
-    --------------------------------------------------------- */
+    // Normal login
     const isMatch = await bcrypt.compare(password, student.password);
 
     if (!isMatch) {
@@ -64,10 +56,7 @@ exports.loginStudent = async (req, res) => {
     }
 
     const token = jwt.sign(
-      {
-        id: student.id,
-        role: "STUDENT"
-      },
+      { id: student.id, role: "STUDENT" },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
