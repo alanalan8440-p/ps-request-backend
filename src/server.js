@@ -12,6 +12,8 @@ const staffRoutes = require("./routes/staff.routes");
 const studentRoutes = require("./routes/student.routes");
 
 const app = express();
+app.set("trust proxy", 1);
+
 
 /* ---------------- SECURITY ---------------- */
 
