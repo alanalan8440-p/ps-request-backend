@@ -1,21 +1,23 @@
-const app = require("./app");
+require("dotenv").config();
+const express = require("express");
 const prisma = require("./config/prisma");
-const { PORT } = require("./config/env");
 
-async function start() {
-  try {
-    await prisma.$connect();
-    console.log("Database connected");
+const app = express();
 
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
+const PORT = process.env.PORT || 5000;
 
-  } catch (err) {
-    console.error("Database connection failed", err);
-    process.exit(1);
-  }
-}
+app.get("/", (req, res) => {
+  res.json({ status: "OK" });
+});
 
-start();
+// Start server FIRST
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
+// Then connect DB (non-blocking)
+prisma.$connect()
+  .then(() => console.log("Database connected"))
+  .catch((err) => {
+    console.error("Database connection failed:", err);
+  });
