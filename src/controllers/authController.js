@@ -1,90 +1,104 @@
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const prisma = require("../config/prisma");
-const jwt = require("../utils/jwt");
-const hashUtil = require("../utils/hash");
 
-/* =====================================================
-   STUDENT LOGIN
-===================================================== */
+// ======================
+// STUDENT LOGIN
+// ======================
+
 exports.studentLogin = async (req, res) => {
   try {
-    const { registration, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!registration || !password) {
-      return res.status(400).json({ message: "Missing credentials" });
-    }
-
-    let student = await prisma.student.findUnique({
-      where: { registration }
-    });
-
-    // AUTO CREATE ON FIRST LOGIN
-    if (!student) {
-
-      if (password !== "DEV@123") {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-
-      student = await prisma.student.create({
-        data: {
-          registration,
-          password: await hashUtil.hashPassword("DEV@123"),
-          firstLogin: true
-        }
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required"
       });
-
-      return res.json({ firstLogin: true });
     }
 
-    const valid = await hashUtil.comparePassword(password, student.password);
-
-    if (!valid) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    if (student.firstLogin) {
-      return res.json({ firstLogin: true });
-    }
-
-    const token = jwt.generateToken({
-      id: student.id,
-      registration: student.registration
+    const student = await prisma.student.findUnique({
+      where: { email }
     });
 
-    res.json({ token });
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found"
+      });
+    }
 
-  } catch (err) {
-    res.status(500).json({ message: "Login error" });
+    const isMatch = await bcrypt.compare(password, student.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
+    }
+
+    const token = jwt.sign(
+      { id: student.id, role: "student" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      student: {
+        id: student.id,
+        name: student.name,
+        email: student.email
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Internal server error"
+    });
   }
 };
 
-/* =====================================================
-   CHANGE PASSWORD
-===================================================== */
+// ======================
+// CHANGE PASSWORD
+// ======================
+
 exports.changeStudentPassword = async (req, res) => {
   try {
-    const { registration, newPassword } = req.body;
+    const { oldPassword, newPassword } = req.body;
 
     const student = await prisma.student.findUnique({
-      where: { registration }
+      where: { id: req.user.id }
     });
 
     if (!student) {
-      return res.status(404).json({ message: "Registration not found" });
+      return res.status(404).json({
+        message: "Student not found"
+      });
     }
 
-    const hashed = await hashUtil.hashPassword(newPassword);
+    const isMatch = await bcrypt.compare(oldPassword, student.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Old password incorrect"
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await prisma.student.update({
-      where: { registration },
-      data: {
-        password: hashed,
-        firstLogin: false
-      }
+      where: { id: student.id },
+      data: { password: hashedPassword }
     });
 
-    res.json({ message: "Password updated successfully" });
+    res.status(200).json({
+      message: "Password updated successfully"
+    });
 
-  } catch (err) {
-    res.status(500).json({ message: "Password update error" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Internal server error"
+    });
   }
 };
