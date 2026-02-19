@@ -33,7 +33,7 @@ model Student {
   year         String?
   section      String?
 
-  requests Request[] // 👈 ADD THIS BACK
+  requests     Request[]
 }
 
 model Staff {
