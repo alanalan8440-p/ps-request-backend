@@ -50,20 +50,21 @@ model Staff {
 }
 
 model Request {
-  id            Int           @id @default(autoincrement())
-  studentId     Int
-  type          RequestType
+  id          Int      @id @default(autoincrement())
+  type        String
   justification String
-  fromDate      DateTime
-  toDate        DateTime
-  status        RequestStatus @default(PENDING)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  deletedAt     DateTime?
+  fromDate    DateTime
+  toDate      DateTime
+  status      String   @default("PENDING")
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  isDeleted   Boolean  @default(false)
 
-  @@index([studentId])
-  @@index([status])
-  @@index([createdAt])
+  processedBy Int?
+  processedAt DateTime?
+
+  studentId   Int
+  student     Student  @relation(fields: [studentId], references: [id])
+
+  createdAt   DateTime @default(now())
 }
+
