@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -12,26 +13,31 @@ const staffRoutes = require("./routes/staff.routes");
 const studentRoutes = require("./routes/student.routes");
 
 const app = express();
+
+// Required when behind proxies like Render
 app.set("trust proxy", 1);
 
-
-/* ---------------- SECURITY ---------------- */
+/* ---------------- SECURITY MIDDLEWARE ---------------- */
 
 app.use(helmet());
 app.use(compression());
 
-app.use(cors({
-  origin: "*", // for mobile apps
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "*", // Adjust in production if needed
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(morgan("combined"));
 
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200
-}));
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200, // limit each IP
+  })
+);
 
 /* ---------------- ROUTES ---------------- */
 
@@ -42,26 +48,40 @@ app.use("/api/students", studentRoutes);
 /* ---------------- HEALTH CHECK ---------------- */
 
 app.get("/", (req, res) => {
-  res.json({ message: "Request App Backend Running" });
+  res.status(200).json({
+    status: "success",
+    message: "Request App Backend Running",
+  });
 });
 
-/* ---------------- ERROR HANDLER ---------------- */
+/* ---------------- GLOBAL ERROR HANDLER ---------------- */
 
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ message: "Internal Server Error" });
+  console.error(err.stack);
+
+  res.status(500).json({
+    status: "error",
+    message: "Internal Server Error",
+  });
 });
 
 /* ---------------- START SERVER ---------------- */
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, async () => {
+async function startServer() {
   try {
     await prisma.$connect();
     console.log("Database connected");
-    console.log(`Server running on port ${PORT}`);
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
   } catch (error) {
-    console.error("Database connection failed", error);
+    console.error("Failed to connect to database:", error);
+    process.exit(1); // Fail fast if DB is unavailable
   }
-});
+}
+
+startServer();
