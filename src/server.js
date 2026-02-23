@@ -1,29 +1,20 @@
 require("dotenv").config();
-
 const express = require("express");
 const prisma = require("./config/prisma");
+
+const routes = require("./routes"); // ✅ use index.js
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-/* ---------------- MIDDLEWARE ---------------- */
-
 app.use(express.json());
 
-/* ---------------- ROUTES ---------------- */
-
-// ✅ Correct path (matches your folder structure)
-const authRoutes = require("./modules/auth/auth.routes");
-
-app.use("/api/auth", authRoutes);
-
-/* ---------------- HEALTH CHECK ---------------- */
+// ✅ Mount ALL routes under /api
+app.use("/api", routes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
-
-/* ---------------- START SERVER ---------------- */
 
 async function startServer() {
   try {
