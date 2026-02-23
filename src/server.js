@@ -1,33 +1,43 @@
 require("dotenv").config();
+
 const express = require("express");
 const prisma = require("./config/prisma");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Middleware
+/* ---------------- MIDDLEWARE ---------------- */
+
 app.use(express.json());
 
-// ✅ ROUTES IMPORT
-const authRoutes = require("./modules/auth/auth.js"); 
-// adjust path if needed
+/* ---------------- ROUTES ---------------- */
 
-// ✅ MOUNT ROUTES
-app.use("/api", authRoutes);
+// ✅ Correct path (matches your folder structure)
+const authRoutes = require("./modules/auth/auth.routes");
 
-// Test route
+app.use("/api/auth", authRoutes);
+
+/* ---------------- HEALTH CHECK ---------------- */
+
 app.get("/", (req, res) => {
-  res.json({ status: "OK" });
+  res.status(200).json({ status: "OK" });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+/* ---------------- START SERVER ---------------- */
 
-// DB connect
-prisma.$connect()
-  .then(() => console.log("Database connected"))
-  .catch((err) => {
-    console.error("Database connection failed:", err);
-  });
+async function startServer() {
+  try {
+    await prisma.$connect();
+    console.log("Database connected");
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error("Database connection failed:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
