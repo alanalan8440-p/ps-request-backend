@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const prisma = require("./config/prisma");
+
 const routes = require("./routes");
 
 const app = express();
@@ -8,37 +9,37 @@ const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 
-// Mount ALL routes here
+// Mount all routes
 app.use("/api", routes);
+
+// ✅ TEMP TEST ROUTE (for creating one student)
+app.get("/api/create-test-student", async (req, res) => {
+  try {
+    const bcrypt = require("bcrypt");
+
+    const hashedPassword = await bcrypt.hash("123456", 10);
+
+    const student = await prisma.student.create({
+      data: {
+        registration: "1001",
+        password: hashedPassword,
+      },
+    });
+
+    res.status(200).json({
+      message: "Test student created successfully",
+      student,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error creating student",
+      error: error.message,
+    });
+  }
+});
 
 app.get("/", (req, res) => {
   res.status(200).json({ status: "OK" });
-});
-
-app.get("/api/create-test-student", async (req, res) => {
-  const bcrypt = require("bcrypt");
-
-  const hashedPassword = await bcrypt.hash("123456", 10);
-
-  const student = await prisma.student.create({
-    data: {
-      registration: "1001",
-      password: hashedPassword
-    }
-  });
-
-  res.json({
-    message: "Test student created",
-    student
-  });
-});
-// Global error handler (IMPORTANT)
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(err.statusCode || 500).json({
-    status: "error",
-    message: err.message || "Internal Server Error",
-  });
 });
 
 async function startServer() {
