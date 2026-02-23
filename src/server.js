@@ -12,7 +12,20 @@ app.use(express.json());
 // Mount all routes
 app.use("/api", routes);
 
-
+app.get("/api/check-staff-table", async (req, res) => {
+  try {
+    const staff = await prisma.staff.findMany();
+    res.json({
+      message: "Staff table exists",
+      data: staff,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Staff table does NOT exist",
+      error: error.message,
+    });
+  }
+});
 
 app.get("/", (req, res) => {
   res.status(200).json({ status: "OK" });
