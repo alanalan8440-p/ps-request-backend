@@ -12,31 +12,7 @@ app.use(express.json());
 // Mount all routes
 app.use("/api", routes);
 
-// ✅ TEMP TEST ROUTE (for creating one student)
-app.get("/api/create-test-student", async (req, res) => {
-  try {
-    const bcrypt = require("bcrypt");
 
-    const hashedPassword = await bcrypt.hash("123456", 10);
-
-    const student = await prisma.student.create({
-      data: {
-        registration: "1001",
-        password: hashedPassword,
-      },
-    });
-
-    res.status(200).json({
-      message: "Test student created successfully",
-      student,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Error creating student",
-      error: error.message,
-    });
-  }
-});
 
 app.get("/", (req, res) => {
   res.status(200).json({ status: "OK" });
