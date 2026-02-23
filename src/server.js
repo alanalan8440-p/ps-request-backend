@@ -11,16 +11,26 @@ app.use(express.json());
 
 // Mount all routes
 app.use("/api", routes);
-app.get("/api/check-staff-table", async (req, res) => {
+app.get("/api/create-test-staff", async (req, res) => {
   try {
-    const staff = await prisma.staff.findMany();
+    const bcrypt = require("bcrypt");
+
+    const hashedPassword = await bcrypt.hash("123456", 10);
+
+    const staff = await prisma.staff.create({
+      data: {
+        staffId: "S1001",
+        password: hashedPassword,
+      },
+    });
+
     res.status(200).json({
-      message: "Staff table exists",
-      data: staff,
+      message: "Test staff created successfully",
+      staff,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Staff table does NOT exist",
+      message: "Error creating staff",
       error: error.message,
     });
   }
