@@ -11,11 +11,10 @@ app.use(express.json());
 
 // Mount all routes
 app.use("/api", routes);
-
 app.get("/api/check-staff-table", async (req, res) => {
   try {
     const staff = await prisma.staff.findMany();
-    res.json({
+    res.status(200).json({
       message: "Staff table exists",
       data: staff,
     });
