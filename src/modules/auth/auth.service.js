@@ -3,13 +3,13 @@ const AppError = require("../../common/errors/AppError");
 const { comparePassword, hashPassword } = require("../../common/utils/hash");
 const { generateToken } = require("../../common/utils/jwt");
 
-exports.studentLogin = async ({ email, password }) => {
-  if (!email || !password) {
-    throw new AppError("Email and password required", 400);
+exports.studentLogin = async ({ registration, password }) => {
+  if (!registration || !password) {
+    throw new AppError("Registration and password required", 400);
   }
 
   const student = await prisma.student.findUnique({
-    where: { email }
+    where: { registration }  // ✅ FIXED (was email)
   });
 
   if (!student) {
@@ -32,11 +32,10 @@ exports.studentLogin = async ({ email, password }) => {
     student: {
       id: student.id,
       name: student.name,
-      email: student.email
+      registration: student.registration
     }
   };
 };
-
 exports.changeStudentPassword = async (userId, { oldPassword, newPassword }) => {
   const student = await prisma.student.findUnique({
     where: { id: userId }
