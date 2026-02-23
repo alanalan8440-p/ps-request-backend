@@ -15,9 +15,9 @@ app.get("/", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
 
-app.get("/create-test-student", async (req, res) => {
+app.get("/api/create-test-student", async (req, res) => {
   const bcrypt = require("bcrypt");
-  
+
   const hashedPassword = await bcrypt.hash("123456", 10);
 
   const student = await prisma.student.create({
@@ -32,7 +32,6 @@ app.get("/create-test-student", async (req, res) => {
     student
   });
 });
-
 // Global error handler (IMPORTANT)
 app.use((err, req, res, next) => {
   console.error(err);
