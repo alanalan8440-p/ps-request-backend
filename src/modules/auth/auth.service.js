@@ -1,63 +1,128 @@
 const prisma = require("../../config/prisma");
-const AppError = require("../../common/errors/AppError");
-const { comparePassword, hashPassword } = require("../../common/utils/hash");
-const { generateToken } = require("../../common/utils/jwt");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+/* ================= TOKEN GENERATOR ================= */
+
+const generateToken = (id, role) => {
+  return jwt.sign(
+    { id, role },
+    process.env.JWT_SECRET,
+    { expiresIn: "1d" }
+  );
+};
+
+/* ================= STUDENT LOGIN ================= */
 
 exports.studentLogin = async ({ registration, password }) => {
   if (!registration || !password) {
-    throw new AppError("Registration and password required", 400);
+    throw new Error("Registration and password are required");
   }
 
   const student = await prisma.student.findUnique({
-    where: { registration }  // ✅ FIXED (was email)
+    where: { registration },
   });
 
-  if (!student) {
-    throw new AppError("Invalid credentials", 401);
-  }
+  if (!student) throw new Error("Invalid credentials");
 
-  const isMatch = await comparePassword(password, student.password);
+  const isMatch = await bcrypt.compare(password, student.password);
+  if (!isMatch) throw new Error("Invalid credentials");
 
-  if (!isMatch) {
-    throw new AppError("Invalid credentials", 401);
-  }
-
-  const token = generateToken({
-    id: student.id,
-    role: "student"
-  });
+  const token = generateToken(student.id, "student");
 
   return {
     token,
+    role: "student",
     student: {
-      id: student.id,
+      registration: student.registration,
       name: student.name,
-      registration: student.registration
-    }
+      department: student.department,
+      year: student.year,
+      section: student.section,
+    },
   };
 };
-exports.changeStudentPassword = async (userId, { oldPassword, newPassword }) => {
+
+/* ================= STAFF LOGIN ================= */
+
+exports.staffLogin = async ({ staffId, password }) => {
+  if (!staffId || !password) {
+    throw new Error("Staff ID and password are required");
+  }
+
+  const staff = await prisma.staff.findUnique({
+    where: { staffId },
+  });
+
+  if (!staff) throw new Error("Invalid credentials");
+
+  const isMatch = await bcrypt.compare(password, staff.password);
+  if (!isMatch) throw new Error("Invalid credentials");
+
+  const token = generateToken(staff.id, "staff");
+
+  return {
+    token,
+    role: "staff",
+    staff: {
+      staffId: staff.staffId,
+      name: staff.name,
+    },
+  };
+};
+
+/* ================= CHANGE STUDENT PASSWORD ================= */
+
+exports.changeStudentPassword = async ({ registration, newPassword }) => {
+  if (!registration || !newPassword) {
+    throw new Error("Registration and new password are required");
+  }
+
   const student = await prisma.student.findUnique({
-    where: { id: userId }
+    where: { registration },
   });
 
   if (!student) {
-    throw new AppError("Student not found", 404);
+    throw new Error("Student not found");
   }
 
-  const isMatch = await comparePassword(oldPassword, student.password);
-
-  if (!isMatch) {
-    throw new AppError("Old password incorrect", 401);
-  }
-
-  const hashedPassword = await hashPassword(newPassword);
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   await prisma.student.update({
-    where: { id: userId },
-    data: { password: hashedPassword }
+    where: { registration },
+    data: {
+      password: hashedPassword,
+      firstLogin: false,
+    },
   });
 
-  return { message: "Password updated successfully" };
+  return { message: "Password changed successfully" };
 };
 
+/* ================= CHANGE STAFF PASSWORD ================= */
+
+exports.changeStaffPassword = async ({ staffId, newPassword }) => {
+  if (!staffId || !newPassword) {
+    throw new Error("Staff ID and new password are required");
+  }
+
+  const staff = await prisma.staff.findUnique({
+    where: { staffId },
+  });
+
+  if (!staff) {
+    throw new Error("Staff not found");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.staff.update({
+    where: { staffId },
+    data: {
+      password: hashedPassword,
+      firstLogin: false,
+    },
+  });
+
+  return { message: "Password changed successfully" };
+};

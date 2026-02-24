@@ -1,6 +1,6 @@
 const prisma = require("../../config/prisma");
 const AppError = require("../../common/errors/AppError");
-const { comparePassword } = require("../../common/utils/hash");
+const { comparePassword, hashPassword } = require("../../common/utils/hash");
 const { generateToken } = require("../../common/utils/jwt");
 
 /* =========================================================
@@ -25,12 +25,50 @@ exports.login = async ({ staffId, password }) => {
     throw new AppError("Invalid credentials", 401);
   }
 
+  // 🔥 FORCE PASSWORD RESET ON FIRST LOGIN
+  if (staff.firstLogin) {
+    return {
+      requirePasswordChange: true,
+      staffId: staff.staffId,
+      name: staff.name
+    };
+  }
+
   return {
     token: generateToken({
       id: staff.id,
-      role: staff.role
+      role: "staff"
     })
   };
+};
+
+/* =========================================================
+   CHANGE PASSWORD (FIRST LOGIN OR NORMAL)
+========================================================= */
+exports.changePassword = async (staffId, newPassword) => {
+  if (!staffId || !newPassword) {
+    throw new AppError("staffId and newPassword required", 400);
+  }
+
+  const staff = await prisma.staff.findUnique({
+    where: { staffId }
+  });
+
+  if (!staff) {
+    throw new AppError("Staff not found", 404);
+  }
+
+  const hashed = await hashPassword(newPassword);
+
+  await prisma.staff.update({
+    where: { staffId },
+    data: {
+      password: hashed,
+      firstLogin: false
+    }
+  });
+
+  return { message: "Password updated successfully" };
 };
 
 /* =========================================================
@@ -44,7 +82,10 @@ exports.getAllRequests = async () => {
         select: {
           id: true,
           name: true,
-          registration: true
+          registration: true,
+          department: true,
+          year: true,
+          section: true
         }
       }
     },
@@ -111,7 +152,15 @@ exports.getRequestHistory = async (requestId) => {
   const request = await prisma.request.findUnique({
     where: { id: parseInt(requestId) },
     include: {
-      student: true
+      student: {
+        select: {
+          name: true,
+          registration: true,
+          department: true,
+          year: true,
+          section: true
+        }
+      }
     }
   });
 

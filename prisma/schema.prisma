@@ -7,64 +7,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  ADMIN
-  OFFICER
-}
-
-enum RequestType {
-  OD
-  LEAVE
-}
-
-enum RequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 model Student {
-  id           Int     @id @default(autoincrement())
-  registration String  @unique
-  password     String
-  firstLogin   Boolean @default(true)
+  id           Int       @id @default(autoincrement())
+  registration String    @unique
   name         String?
   department   String?
   year         String?
   section      String?
+  password     String
+  firstLogin   Boolean   @default(true)
 
   requests     Request[]
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([registration])
 }
 
 model Staff {
-  id        Int       @id @default(autoincrement())
-  staffId   String    @unique
-  name      String
-  password  String
-  role      UserRole
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id         Int      @id @default(autoincrement())
+  staffId    String   @unique
+  name       String?
+  password   String
+  role       String   @default("STAFF")
+  firstLogin Boolean  @default(true)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([staffId])
 }
 
 model Request {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   type        String
-  justification String
-  fromDate    DateTime
-  toDate      DateTime
-  status      String   @default("PENDING")
+  message     String
+  proofUrl    String?
+  status      String    @default("PENDING")
 
-  isDeleted   Boolean  @default(false)
+  studentId   Int
+  student     Student   @relation(fields: [studentId], references: [id])
 
   processedBy Int?
   processedAt DateTime?
 
-  studentId   Int
-  student     Student  @relation(fields: [studentId], references: [id])
+  isDeleted   Boolean   @default(false)
 
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([studentId])
+  @@index([status])
 }
-

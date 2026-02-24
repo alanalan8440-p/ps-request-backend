@@ -1,56 +1,95 @@
-const service = require("./staff.service");
+const staffService = require("./staff.service");
 
-/* ---------------- LOGIN ---------------- */
+/* =========================================================
+   LOGIN
+========================================================= */
 exports.login = async (req, res, next) => {
   try {
-    const result = await service.login(req.body);
-    res.json({ status: "success", data: result });
-  } catch (err) {
-    next(err);
+    const result = await staffService.login(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
   }
 };
 
-/* ---------------- GET ALL ---------------- */
-exports.getAllRequests = async (req, res, next) => {
+/* =========================================================
+   CHANGE PASSWORD
+========================================================= */
+exports.changePassword = async (req, res, next) => {
   try {
-    const result = await service.getAllRequests();
-    res.json({ status: "success", data: result });
-  } catch (err) {
-    next(err);
-  }
-};
+    const { staffId, newPassword } = req.body;
 
-/* ---------------- UPDATE STATUS ---------------- */
-exports.updateRequestStatus = async (req, res, next) => {
-  try {
-    const result = await service.updateRequestStatus(
-      req.params.id,
-      req.body.status,
-      req.user.id
+    const result = await staffService.changePassword(
+      staffId,
+      newPassword
     );
 
-    res.json({ status: "success", data: result });
-  } catch (err) {
-    next(err);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
   }
 };
 
-/* ---------------- SOFT DELETE ---------------- */
+/* =========================================================
+   GET ALL REQUESTS
+========================================================= */
+exports.getAllRequests = async (req, res, next) => {
+  try {
+    const result = await staffService.getAllRequests();
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/* =========================================================
+   UPDATE REQUEST STATUS
+========================================================= */
+exports.updateRequestStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const staffId = req.user.id; // from auth middleware
+
+    const result = await staffService.updateRequestStatus(
+      id,
+      status,
+      staffId
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/* =========================================================
+   SOFT DELETE REQUEST
+========================================================= */
 exports.softDeleteRequest = async (req, res, next) => {
   try {
-    const result = await service.softDeleteRequest(req.params.id);
-    res.json({ status: "success", data: result });
-  } catch (err) {
-    next(err);
+    const { id } = req.params;
+
+    const result = await staffService.softDeleteRequest(id);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
   }
 };
 
-/* ---------------- HISTORY ---------------- */
+/* =========================================================
+   GET REQUEST HISTORY
+========================================================= */
 exports.getRequestHistory = async (req, res, next) => {
   try {
-    const result = await service.getRequestHistory(req.params.id);
-    res.json({ status: "success", data: result });
-  } catch (err) {
-    next(err);
+    const { id } = req.params;
+
+    const result = await staffService.getRequestHistory(id);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
   }
 };
