@@ -41,10 +41,9 @@ router.post(
 
 router.post(
   "/bulk-upload",
-  authMiddleware,
-  role("staff", "admin"),
-  uploadExcel.single("file"),   // ✅ Excel only
+  uploadExcel.single("file"),   // 🔥 FIRST
+  authMiddleware,               // 🔥 SECOND
+  role("staff", "admin"),       // 🔥 THIRD
   controller.bulkUploadStudents
 );
-
 module.exports = router;
