@@ -1,40 +1,41 @@
 const multer = require("multer");
+const path = require("path");
 
 /* ================= STORAGE ================= */
 
 const storage = multer.memoryStorage();
 
-/* ================= EXCEL FILTER ================= */
+/* ================= EXCEL UPLOAD ================= */
 
-const excelFilter = (req, file, cb) => {
-  if (
-    file.mimetype.includes("sheet") ||
-    file.mimetype.includes("excel")
-  ) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only Excel files are allowed"), false);
-  }
-};
-
-/* ================= IMAGE FILTER ================= */
-
-const imageFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image/")) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only image files are allowed"), false);
-  }
-};
-
-/* ================= EXPORTS ================= */
-
-exports.uploadExcel = multer({
+const uploadExcel = multer({
   storage,
-  fileFilter: excelFilter,
+  fileFilter: (req, file, cb) => {
+    if (
+      file.mimetype ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      file.mimetype === "application/vnd.ms-excel"
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only Excel files allowed"), false);
+    }
+  },
 });
 
-exports.uploadImage = multer({
+/* ================= IMAGE UPLOAD ================= */
+
+const uploadImage = multer({
   storage,
-  fileFilter: imageFilter,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files allowed"), false);
+    }
+  },
 });
+
+module.exports = {
+  uploadExcel,
+  uploadImage,
+};
