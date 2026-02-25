@@ -1,18 +1,21 @@
-const service = require("./student.service");
+const studentService = require("./student.service");
+const AppError = require("../../common/errors/AppError");
 
 /* =========================================================
    GET PROFILE
 ========================================================= */
 exports.getProfile = async (req, res, next) => {
   try {
-    const result = await service.getProfile(req.user.id);
+    const studentId = req.user.id;
+
+    const student = await studentService.getProfile(studentId);
 
     res.status(200).json({
       status: "success",
-      data: result,
+      data: student,
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -21,74 +24,53 @@ exports.getProfile = async (req, res, next) => {
 ========================================================= */
 exports.myRequests = async (req, res, next) => {
   try {
-    const result = await service.getMyRequests(req.user.id);
+    const studentId = req.user.id;
+
+    const requests = await studentService.getMyRequests(studentId);
 
     res.status(200).json({
       status: "success",
-      data: result,
+      data: requests,
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 };
 
 /* =========================================================
-   SUBMIT OD / LEAVE REQUEST (Cloudinary)
+   SUBMIT REQUEST (IMAGE)
 ========================================================= */
 exports.submitRequest = async (req, res, next) => {
   try {
-    const { type, message } = req.body;
+    const studentId = req.user.id;
 
-    if (!type || !message) {
-      return res.status(400).json({
-        status: "error",
-        message: "Type and message are required",
-      });
-    }
-
-    if (!["OD", "LEAVE"].includes(type)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid request type",
-      });
-    }
-
-    const result = await service.submitRequest(
-      req.user.id,
-      { type, message },
-      req.file // send entire file object
+    const result = await studentService.submitRequest(
+      studentId,
+      req.body,
+      req.file
     );
 
-    res.status(201).json({
-      status: "success",
-      data: result,
-    });
-  } catch (err) {
-    next(err);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
   }
 };
 
 /* =========================================================
-   BULK UPLOAD STUDENTS (STAFF ONLY)
+   BULK UPLOAD STUDENTS (EXCEL)
 ========================================================= */
 exports.bulkUploadStudents = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({
-        status: "error",
-        message: "Excel file is required",
-      });
+      throw new AppError("Excel file is required", 400);
     }
 
-    const result = await service.bulkUploadStudents(
+    const result = await studentService.bulkUploadStudents(
       req.file.path
     );
 
-    res.status(200).json({
-      status: "success",
-      data: result,
-    });
-  } catch (err) {
-    next(err);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
   }
 };
