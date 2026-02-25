@@ -15,18 +15,29 @@ const generateToken = (id, role) => {
 /* ================= STUDENT LOGIN ================= */
 
 exports.studentLogin = async ({ registration, password }) => {
-  if (!registration || !password) {
-    throw new Error("Registration and password are required");
-  }
+  console.log("Incoming registration:", registration);
+  console.log("Incoming password:", password);
 
   const student = await prisma.student.findUnique({
     where: { registration },
   });
 
-  if (!student) throw new Error("Invalid credentials");
+  console.log("Student from DB:", student);
+
+  if (!student) {
+    console.log("❌ Student NOT found");
+    throw new Error("Invalid credentials");
+  }
+
+  console.log("DB password hash:", student.password);
 
   const isMatch = await bcrypt.compare(password, student.password);
-  if (!isMatch) throw new Error("Invalid credentials");
+  console.log("Password match result:", isMatch);
+
+  if (!isMatch) {
+    console.log("❌ Password does NOT match");
+    throw new Error("Invalid credentials");
+  }
 
   const token = generateToken(student.id, "student");
 
